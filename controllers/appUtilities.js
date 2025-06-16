@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 export const getProfile = (req, res, db) => {
     // console.log("req.param", req.params)
     const { id } = req.params
@@ -24,10 +27,10 @@ export const updateUserRank = (req, res, db) => {
     })
 }
 
-const USER_ID = 'chen7647';
-const APP_ID = 'my-first-application-ddxi3q';
-const MODEL_ID = 'face-detection';
-const MODEL_VERSION_ID = '6dc7e46bc9124c5c8824be4822abe105';
+const USER_ID = process.env.USER_ID;
+const APP_ID = process.env.APP_ID;
+const MODEL_ID = process.env.MODEL_ID;
+const MODEL_VERSION_ID = process.env.MODEL_VERSION_ID;
 
 const getClarifyRequest = ((imageURL) => {
     const raw = JSON.stringify({
