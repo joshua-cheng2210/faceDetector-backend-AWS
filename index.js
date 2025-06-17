@@ -23,83 +23,93 @@ export const handler = async (event) => {
   const httpMethod = event.httpMethod;
   const path = event.path;
 
-  if (httpMethod === 'POST') {
-    if (path === '/signin') {
-      // Parse request body
-      const req = { body: JSON.parse(event.body || '{}') };
-      let statusCode = 200;
-      let responseBody;
-      await handleSignIn(req, {
-        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
-        json: (body) => { responseBody = body; }
-      }, db, bcrypt);
-      return {
-        statusCode,
-        body: JSON.stringify(responseBody),
-      };
-    } else if (path === '/register') {
-      const req = { body: JSON.parse(event.body || '{}') };
-      let statusCode = 200;
-      let responseBody;
-      await handleRegister(req, {
-        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
-        json: (body) => { responseBody = body; }
-      }, db, bcrypt);
-      return {
-        statusCode,
-        body: JSON.stringify(responseBody),
-      };
-    } else if (path === '/promptingClarifai') {
-      const req = { body: JSON.parse(event.body || '{}') };
-      let statusCode = 200;
-      let responseBody;
-      await getoutput(req, {
-        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
-        json: (body) => { responseBody = body; }
-      });
-      return {
-        statusCode,
-        body: JSON.stringify(responseBody),
-      };
+  try{
+    if (httpMethod === 'POST') {
+      if (path === '/signin') {
+        // Parse request body
+        const req = { body: JSON.parse(event.body || '{}') };
+        let statusCode = 200;
+        let responseBody;
+        await handleSignIn(req, {
+          status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+          json: (body) => { responseBody = body; }
+        }, db, bcrypt);
+        return {
+          statusCode,
+          body: JSON.stringify(responseBody),
+        };
+      } else if (path === '/register') {
+        const req = { body: JSON.parse(event.body || '{}') };
+        let statusCode = 200;
+        let responseBody;
+        await handleRegister(req, {
+          status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+          json: (body) => { responseBody = body; }
+        }, db, bcrypt);
+        return {
+          statusCode,
+          body: JSON.stringify(responseBody),
+        };
+      } else if (path === '/promptingClarifai') {
+        const req = { body: JSON.parse(event.body || '{}') };
+        let statusCode = 200;
+        let responseBody;
+        await getoutput(req, {
+          status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+          json: (body) => { responseBody = body; }
+        });
+        return {
+          statusCode,
+          body: JSON.stringify(responseBody),
+        };
+      }
+    } else if (httpMethod === 'GET') {
+      if (path.startsWith('/profile/')) {
+        const id = path.split('/')[2];
+        const req = { params: { id } };
+        let statusCode = 200;
+        let responseBody;
+        await getProfile(req, {
+          status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+          json: (body) => { responseBody = body; }
+        }, db);
+        return {
+          statusCode,
+          body: JSON.stringify(responseBody),
+        };
+      } else if (path === '/testing') {
+        return {
+          statusCode: 200,
+          body: JSON.stringify('AWS testing successful'),
+        };
+      }
+    } else if (httpMethod === 'PUT') {
+      if (path === '/image') {
+        const req = { body: JSON.parse(event.body || '{}') };
+        let statusCode = 200;
+        let responseBody;
+        await updateUserRank(req, {
+          status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+          json: (body) => { responseBody = body; }
+        }, db);
+        return {
+          statusCode,
+          body: JSON.stringify(responseBody),
+        };
+      }
     }
-  } else if (httpMethod === 'GET') {
-    if (path.startsWith('/profile/')) {
-      const id = path.split('/')[2];
-      const req = { params: { id } };
-      let statusCode = 200;
-      let responseBody;
-      await getProfile(req, {
-        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
-        json: (body) => { responseBody = body; }
-      }, db);
-      return {
-        statusCode,
-        body: JSON.stringify(responseBody),
-      };
-    } else if (path === '/testing') {
-      return {
-        statusCode: 200,
-        body: JSON.stringify('AWS testing successful'),
-      };
-    }
-  } else if (httpMethod === 'PUT') {
-    if (path === '/image') {
-      const req = { body: JSON.parse(event.body || '{}') };
-      let statusCode = 200;
-      let responseBody;
-      await updateUserRank(req, {
-        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
-        json: (body) => { responseBody = body; }
-      }, db);
-      return {
-        statusCode,
-        body: JSON.stringify(responseBody),
-      };
-    }
+    return {
+      statusCode: 404,
+      body: JSON.stringify({ message: 'File Not Found!' }),
+    };
+
+  } catch (error) {
+    console.log("error: ", error);
+    return {
+      statusCode: 404,
+      body: JSON.stringify({ message: 'File Not Found!' }),
+    };
+
   }
 
-  return {
-    statusCode: 404,
-    body: JSON.stringify({ message: 'Not Found' }),
-  };
 };

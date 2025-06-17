@@ -1,31 +1,33 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const getProfile = (req, res, db) => {
-    // console.log("req.param", req.params)
-    const { id } = req.params
-    db.select("*").from("users").where({
-        id: id
-    }).then(response => {
-        // console.log("printing get users: ", response, "response.length: ", response.length)
-        if (response.length != 1){
-            return res.status(400).json("unable to get profile")
+export const getProfile = async (req, res, db) => {
+    const { id } = req.params;
+    try {
+        const response = await db.select("*").from("users").where({ id: id });
+        if (response.length !== 1) {
+            return res.status(400).json("unable to get profile");
         }
-        return res.json(response)
-    }).catch(() => {res.status(400).json("unable to get profile")})
-}
+        return res.json(response);
+    } catch (error) {
+        console.log("error: ", error);
+        return res.status(400).json("unable to get profile");
+    }
+};
 
-export const updateUserRank = (req, res, db) => {
-    const { id } = req.body
-    db("users").where({
-        id: id
-    }).increment("entries", 1).returning("entries").then(data => {
-        // console.log(data)
-        return res.json(data[0])
-    }).catch(() => {
-        return res.json("failed to update rank")
-    })
-}
+export const updateUserRank = async (req, res, db) => {
+    const { id } = req.body;
+    try {
+        const data = await db("users")
+            .where({ id: id })
+            .increment("entries", 1)
+            .returning("entries");
+        return res.json(data[0]);
+    } catch (error) {
+        console.log("error: ", error);
+        return res.status(500).json("failed to update rank");
+    }
+};
 
 const USER_ID = process.env.USER_ID;
 const APP_ID = process.env.APP_ID;
@@ -65,53 +67,23 @@ const getClarifyRequest = ((imageURL) => {
     return requestOptions
 })
 
-export const getoutput = (req, res) => {
+export const getoutput = async (req, res) => {
     // https://www.shutterstock.com/image-photo/happy-businessman-enjoying-home-office-600nw-2257033579.jpg
-    // console.log("req.body: ", req.body)
     const { imgURL } = req.body
 
-    const requestOptions = getClarifyRequest(imgURL);
-    console.log("requestOptions: ", requestOptions)
-    const url = "https://api.clarifai.com/v2/models/" + MODEL_ID + "/versions/" + MODEL_VERSION_ID  + "/outputs";
+    try {
+        const requestOptions = getClarifyRequest(imgURL);
+        console.log("requestOptions: ", requestOptions)
+        const url = "https://api.clarifai.com/v2/models/" + MODEL_ID + "/versions/" + MODEL_VERSION_ID  + "/outputs";
 
-    fetch(url, requestOptions)
-    .then((response) => {
-        // console.log("response: ", response)
-        return response.json()
-    }).then(data => {
-        // console.log("\n\n------------------------\n\n")
-        // console.log("data: ", data);
-        // console.log("data.status.code: ", data.status.code);
-        // if (data.status.code !== 10000){
-        //     return res.status(400).json("failed to get the output")
-        // } else {
-        //     console.log("\n\ndata.outputs[0].regions: ", data.outputs[0].data.regions);
-        //     console.log("\n\ndata.outputs[0].regions.region_info: ", data.outputs[0].data.regions[0].region_info);
-        //     console.log("\n\ndata.outputs[0].regions.data: ", data.outputs[0].data.regions[0].data);
-        // }
-        
-        res.status(200).json(data);
-    }).catch(error => {
-        // console.log("\n\n---------------there is an error----------\n\n")
+        const response = await fetch(url, requestOptions);
+        const data = await response.json();
+        // console.log("data: ", data)
+        // console.log("\n\ndata.outputs[0]: ", data.outputs[0].data.regions)
+        return res.status(200).json(data);
+    } catch (error) {
         console.log('error', error)
         return res.status(500).json(error)
-    });
+    }
 
-    
-    // .then(result => {
-    //   console.log("result:", result)
-    // //   this.getBoundingBoxes(result.outputs[0].data.regions);
-    // //   this.updateNumEntries()
-    // })
-
-    // try {
-    //     const response = await fetch(url, requestOptions);
-    //     const data = await response.json();
-    //     console.log("data: ", data)
-    //     console.log("\n\ndata.outputs[0]: ", data.outputs[0].data.regions)
-    //     res.json(data); // Send the Clarifai API response back to the frontend
-    // } catch (error) {
-    //     console.error('Error communicating with Clarifai API:', error);
-    //     res.status(500).json({ error: 'Failed to fetch data from Clarifai API' });
-    // }
 }
