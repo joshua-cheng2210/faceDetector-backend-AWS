@@ -1,17 +1,9 @@
 // to run this on postman, insert this command
 // - npm run start // not npm run dev. we need to use nodemon
-import express from 'express'
-import bcrypt from 'bcrypt-nodejs'
-import cors from 'cors'
-import knex from 'knex'
-import bodyParser from 'body-parser';
-import dotenv from 'dotenv';
-import serverless from 'serverless-http'; // Added for Lambda compatibility
-
-dotenv.config();
-
 import { handleSignIn, handleRegister } from './controllers/logIns.js'
 import { getProfile, updateUserRank, getoutput } from './controllers/appUtilities.js'
+import knex from 'knex'
+import bcrypt from 'bcrypt-nodejs'
 
 const db = knex({
     client: 'pg',
@@ -27,24 +19,87 @@ const db = knex({
 });
 db.migrate.latest();
 
-const app = express()
-const port = process.env.port || 3069
-app.use(express.json())
-app.use(cors({
-    // "origin" : "http://localhost:5173"
-    "origin" : "*"
-}))
-app.use(bodyParser.json());
+export const handler = async (event) => {
+  const httpMethod = event.httpMethod;
+  const path = event.path;
 
-// routings
-app.post("/signin", (req, res) => {return handleSignIn(req, res, db, bcrypt)});
-app.post("/register", (req, res) => {return handleRegister(req, res, db, bcrypt)})
-app.get("/profile/:id", (req, res) => {return getProfile(req, res, db)})
-app.put("/image", (req, res) => {return updateUserRank(req, res, db)})
-app.post("/promptingClarifai", (req, res) => {return getoutput(req, res)})
-app.get("/testing", (req, res) => {return res.json("AWS testing sucessful")})
+  if (httpMethod === 'POST') {
+    if (path === '/signin') {
+      // Parse request body
+      const req = { body: JSON.parse(event.body || '{}') };
+      let statusCode = 200;
+      let responseBody;
+      await handleSignIn(req, {
+        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+        json: (body) => { responseBody = body; }
+      }, db, bcrypt);
+      return {
+        statusCode,
+        body: JSON.stringify(responseBody),
+      };
+    } else if (path === '/register') {
+      const req = { body: JSON.parse(event.body || '{}') };
+      let statusCode = 200;
+      let responseBody;
+      await handleRegister(req, {
+        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+        json: (body) => { responseBody = body; }
+      }, db, bcrypt);
+      return {
+        statusCode,
+        body: JSON.stringify(responseBody),
+      };
+    } else if (path === '/promptingClarifai') {
+      const req = { body: JSON.parse(event.body || '{}') };
+      let statusCode = 200;
+      let responseBody;
+      await getoutput(req, {
+        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+        json: (body) => { responseBody = body; }
+      });
+      return {
+        statusCode,
+        body: JSON.stringify(responseBody),
+      };
+    }
+  } else if (httpMethod === 'GET') {
+    if (path.startsWith('/profile/')) {
+      const id = path.split('/')[2];
+      const req = { params: { id } };
+      let statusCode = 200;
+      let responseBody;
+      await getProfile(req, {
+        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+        json: (body) => { responseBody = body; }
+      }, db);
+      return {
+        statusCode,
+        body: JSON.stringify(responseBody),
+      };
+    } else if (path === '/testing') {
+      return {
+        statusCode: 200,
+        body: JSON.stringify('AWS testing successful'),
+      };
+    }
+  } else if (httpMethod === 'PUT') {
+    if (path === '/image') {
+      const req = { body: JSON.parse(event.body || '{}') };
+      let statusCode = 200;
+      let responseBody;
+      await updateUserRank(req, {
+        status: (code) => { statusCode = code; return { json: (body) => { responseBody = body; } } },
+        json: (body) => { responseBody = body; }
+      }, db);
+      return {
+        statusCode,
+        body: JSON.stringify(responseBody),
+      };
+    }
+  }
 
-// Export handler for AWS Lambda
-serverless(app, {
-  basePath: '/default/face-detector-backend'
-});
+  return {
+    statusCode: 404,
+    body: JSON.stringify({ message: 'Not Found' }),
+  };
+};
