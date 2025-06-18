@@ -20,8 +20,8 @@ const db = knex({
 db.migrate.latest();
 
 export const handler = async (event) => {
-  const httpMethod = event.httpMethod;
-  const path = event.path;
+  const httpMethod = event.httpMethod || (event.requestContext?.http?.method) || '';
+  let path = event.path || event.rawPath || '';
 
   try{
     if (httpMethod === 'POST') {
@@ -63,6 +63,10 @@ export const handler = async (event) => {
           body: JSON.stringify(responseBody),
         };
       }
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'no such POST!' }),
+      };
     } else if (httpMethod === 'GET') {
       if (path.startsWith('/profile/')) {
         const id = path.split('/')[2];
@@ -83,6 +87,10 @@ export const handler = async (event) => {
           body: JSON.stringify('AWS testing successful'),
         };
       }
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'no such GET!' }),
+      };
     } else if (httpMethod === 'PUT') {
       if (path === '/image') {
         const req = { body: JSON.parse(event.body || '{}') };
@@ -97,10 +105,14 @@ export const handler = async (event) => {
           body: JSON.stringify(responseBody),
         };
       }
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'no such PUT!' }),
+      };
     }
     return {
       statusCode: 404,
-      body: JSON.stringify({ message: 'File Not Found!' }),
+      body: JSON.stringify({ message: `${JSON.stringify(event)} Action Not Found!` }),
     };
 
   } catch (error) {
