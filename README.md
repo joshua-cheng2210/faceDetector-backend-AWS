@@ -23,6 +23,13 @@
     - building and image 
     - pushing the image to docker hub repo
     - figuring out the individual ports needed for the frontend docker, frontend docker hosting, backend docker, backend DB
+- update the backend to be hosted through AWS
+    - uploaded these files and directories to the AWS S3 bucket:
+        - package.json
+        - index.js
+    - deploy this code form s3 bucket to AWS Lambda
+    - delete the code from teh s3 bucket (because it is not needed anymore)
+    - used the api gateway to create an endpoint for the lambda function (and then used this endpoint in the frontend code)
     
 # sql tables
 CREATE TABLE login (
